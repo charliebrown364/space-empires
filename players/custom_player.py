@@ -25,18 +25,26 @@ class CustomPlayer():
         my_scout_coords = myself['scout_coords']
         opponent_home_colony_coords = opponent['home_colony_coords']
 
-        # you need to use `my_scout_coords` and
-        # `opponent_home_colony_coords` to return the
-        # translation that will bring you closest to
-        # the opponent
-
         all_distances = []
         for choice in choices:
-            my_coords = tuple(list(my_scout_coords).copy())
-            my_new_coords = (my_coords[0] + choice[0], my_coords[1] + choice[1])
+            
+            # print("\nmy_scout_coords:", my_scout_coords)
+            
+            my_coords = tuple(list(my_scout_coords.values()).copy())
+            # print("my_coords:", my_coords)
+            # print("len(my_coords):", len(my_coords))
+            # print("choice:", choice)
+            
+            my_new_coords = []
+            for coord in my_coords:
+                new_coord = (coord[0] + choice[0], coord[1] + choice[1])
+                my_new_coords.append(new_coord)
+            my_new_coords = list(my_new_coords)
+
             distance = self.calc_coord_distance(my_new_coords, opponent_home_colony_coords)
             all_distances.append(distance)
         
+        # print("\nall_distances:", all_distances)
         for i in range(len(all_distances)):
             if all_distances[i] == min(all_distances):
                 best_translation = choices[i]
@@ -44,6 +52,16 @@ class CustomPlayer():
         return best_translation
 
     def calc_coord_distance(self, my_coords, opponent_coords):
-        x_change = (opponent_coords[0] - my_coords[0]) ** 2
-        y_change = (opponent_coords[1] - my_coords[1]) ** 2
-        return (x_change + y_change) ** (1/2)
+        
+        # print("\nmy_coords:", my_coords)
+        # print("opponent_coords:", opponent_coords)
+        
+        coord_distances = []
+        for coord in my_coords:
+            # print("coord:", coord)
+            x_change = (opponent_coords[0] - coord[0]) ** 2
+            y_change = (opponent_coords[1] - coord[1]) ** 2
+            coord_distance = (x_change + y_change) ** (1/2)
+            coord_distances.append(coord_distance)
+        
+        return coord_distances
