@@ -7,10 +7,10 @@ from logger import *
 
 class Game():
   
-    def __init__(self, players, board_size=[7,7]):
+    def __init__(self, players, random_seed, board_size=[7,7]):
         self.players = players
-        logger = Logger('/home/runner/space-empires/logs/log_game_level_0_2.txt')
         self.set_player_numbers()
+        random.seed(random_seed)
 
         board_x, board_y = board_size
         mid_x = (board_x + 1) // 2
@@ -40,6 +40,8 @@ class Game():
             'winner': None
         }
 
+        self.num_scouts = len(self.state['players'][1]['scout_coords'])
+
     def set_player_numbers(self):
         for i, player in enumerate(self.players):
             player.set_player_number(i+1)
@@ -65,7 +67,7 @@ class Game():
         in_bounds_translations = [translation for translation in translations if self.check_if_translation_is_in_bounds(coords, translation)]
         return in_bounds_translations
 
-    # python tests/test_game_level_0_2.py
+    # python tests/test_game_level_0_3_random_seeds.py
 
     def complete_movement_phase(self):
         
@@ -78,10 +80,10 @@ class Game():
         # print("\nplayer_1_scout_coords:", player_1_scout_coords)
         # print("player_2_scout_coords:", player_2_scout_coords)
 
-        first_player_index = random.randint(1, 2)
+        # first_player_index = random.randint(1, 2)
         # print("\nfirst player:", first_player_index)
-        first_player = self.players[first_player_index - 1]
-        second_player = self.players[first_player_index % 2]
+        first_player = self.players[0]
+        second_player = self.players[1]
         ordered_player_list = [first_player, second_player]
         
         for player_index in range(2):
@@ -114,62 +116,124 @@ class Game():
         self.state['turn'] += 1
         # time.sleep(25)
 
-    # python tests/test_game_level_0_2.py
+    # python tests/test_game_level_0_3_random_seeds.py
 
     def complete_combat_phase(self):
         
-        # print("\n\n\n\ncomplete_combat_phase")
+        print("\n\n\n\ncomplete_combat_phase")
 
         player_1_scout_coords = self.state['players'][1]['scout_coords']
         player_2_scout_coords = self.state['players'][2]['scout_coords']
 
-        # print("\nplayer_1_scout_coords:", player_1_scout_coords)
-        # print("player_2_scout_coords:", player_2_scout_coords)
+        print("\nplayer_1_scout_coords:", player_1_scout_coords)
+        print("player_2_scout_coords:", player_2_scout_coords)
         
         combat_scout = self.find_combat()
-        all_scouts = [combat_scout for _ in range(6)]
+        combat_order = [[i, j] for i in [1, 2] for j in range(1, self.num_scouts + 1)]
 
-        # print("\ncombat_scout:", combat_scout)
+        print("\ncombat_scout:", combat_scout)
+        print("init combat_order:", combat_order)
 
-        if self.find_combat() != None:
-            logger.write('\n\t\t\t\tCombat at {}\n\n'.format(combat_scout))
-            # print("\n\n\nCombat at", combat_scout)
-        
+        if combat_scout != None:
+            
+            logger.write('\n\n\t\t\t\tCombat Locations:\n')
+            logger.write('\n\t\t\t\t\t\t\t\t{}\n'.format(combat_scout))
+
+            for i in [1, 2]:
+                for j in range(1, self.num_scouts + 1):
+                    logger.write('\n\t\t\t\t\t\t\t\t\t\t\t\tPlayer {} Scout {}'.format(i, j))
+            
+            # combat_order = sorted(combat_order, key=lambda x: x[1])
+
+            logger.write('\n\n\t\t\t\tCombat at {}\n'.format(combat_scout))
+
+        # python tests/test_game_level_0_3_random_seeds.py
+
+        did_combat = False
+        odds_array = []
+
         while self.find_combat() != None:
-            
-            # might need to change how we calculate rand_player so that the person who went last time doesn't go again.
 
-            rand_player = ''
-            rand_scout = ''
-            while rand_player == '' or rand_scout == '':
+            did_combat = True
+
+            print("\n\n\ncombat_order before for loop:", combat_order)
+
+            for attacking_pair in combat_order:
+
+                if attacking_pair != None:
                 
-                rand_player = random.randint(1, 2)
-                rand_scout = random.randint(1, 3)
+                    attacking_player = attacking_pair[0]
+                    attacking_scout = attacking_pair[1]
+
+                    defending_pairs = [pair for pair in combat_order if pair != None and pair[0] != attacking_player]
+
+                    if defending_pairs != []:
+
+                        defending_pair = defending_pairs[0]
+                        defending_player = defending_pair[0]
+                        defending_scout = defending_pair[1]
+
+                        print("\n\n\nattacking pair:", attacking_pair)
+                        print("defending pair:", defending_pair)
+
+                        logger.write('\n\t\t\t\t\t\t\t\tAttacker: Player {} Scout {}'.format(attacking_player, attacking_scout))
+                        logger.write('\n\t\t\t\t\t\t\t\tDefender: Player {} Scout {}'.format(defending_player, defending_scout))
+                    
+                        # python tests/test_game_level_0_3_random_seeds.py
+
+                        attack_hits = round(random.random())
+                        odds_array.append(attack_hits)
                 
-                if rand_player not in list(self.state['players'].keys()):
-                    rand_player = ''
-                if rand_scout not in list(self.state['players'][rand_player]['scout_coords'].keys()):
-                    rand_scout = ''
+                        if attack_hits == 0:
+                            logger.write('\n\t\t\t\t\t\t\t\t(Miss)\n')
+                            print("Miss")
 
-            # print("\n\nrand_player:", rand_player)
-            # print("list(self.state['players'].keys()):", list(self.state['players'].keys()))
-            # print("\nrand_scout:", rand_scout)
-            # print("list(self.state['players'][rand_player]['scout_coords'].keys()):", list(self.state['players'][rand_player]['scout_coords'].keys()))
+                        else:
+                            print("Hit!")
+                            logger.write('\n\t\t\t\t\t\t\t\tHit!')
+                            logger.write('\n\t\t\t\t\t\t\t\tPlayer {} Scout {} was destroyed\n'.format(defending_player, defending_scout))
+
+                            for i in range(len(combat_order)):
+                                if combat_order[i] == defending_pair:
+                                    combat_order[i] = None
+                
+                        print("\ncombat_order:", combat_order)
+
+            print("\ncombat_order after for loop:", combat_order)
             
-            # print("\nself.state['players'] before:", self.state['players'])
+            print("\nplayer_1_scout_coords before:", self.state['players'][1]['scout_coords'])
+            print("player_2_scout_coords before:", self.state['players'][2]['scout_coords'])
 
-            del self.state['players'][rand_player]['scout_coords'][rand_scout]
+            for i in [1, 2]:
+                
+                keys = self.state['players'][i]['scout_coords'].copy()
+                
+                for j in keys:
 
-            # print("self.state['players'] after :", self.state['players'])
+                    val = self.state['players'][i]['scout_coords'][j]
+                    other_val = self.state['players'][i]['scout_coords'].values()
+                    this_val = val in other_val
 
-            logger.write('\t\t\t\t\t\t\t\tPlayer {} Scout {} was destroyed\n'.format(rand_player, rand_scout))
+                    if combat_order[self.num_scouts * (i - 1) + j - 1] == None and this_val:
+                        del self.state['players'][i]['scout_coords'][j]
 
-            # print("\nPlayer {} Scout {} was destroyed".format(rand_player, rand_scout))
+            print("\nplayer_1_scout_coords after:", self.state['players'][1]['scout_coords'])
+            print("player_2_scout_coords after:", self.state['players'][2]['scout_coords'])
+        
+        if did_combat:
+            
+            logger.write('\n\t\t\t\tSurvivors:\n')
+            logger.write('\n\t\t\t\t\t\t\t\t{}\n'.format(combat_scout))
 
-        # print("\nplayer_1_scout_coords:", self.state['players'][1]['scout_coords'])
-        # print("player_2_scout_coords:", self.state['players'][2]['scout_coords'])
+            for pair in combat_order:
+                if pair != None:
+                    logger.write('\n\t\t\t\t\t\t\t\t\t\t\t\tPlayer {} Scout {}'.format(pair[0], pair[1]))
+        
+        print("\nodds_array:", odds_array)
+        # [0, 1, 1, 0, 0, 0, 1, 1, 0, 0]
 
-    # python tests/test_game_level_0_2.py
+
+    # python tests/test_game_level_0_3_random_seeds.py
 
     def find_combat(self):
 
@@ -186,7 +250,7 @@ class Game():
                 return player_1_scout_coords[0]
         return None
 
-    # python tests/test_game_level_0_2.py
+    # python tests/test_game_level_0_3_random_seeds.py
 
     def run_to_completion(self):
 
@@ -197,13 +261,13 @@ class Game():
 
             # time.sleep(2)
 
-            logger.write('\nBEGINNING OF TURN {} MOVEMENT PHASE\n'.format(turn))
+            logger.write('\nBEGINNING OF TURN {} MOVEMENT PHASE\n\n'.format(turn))
             self.complete_movement_phase()
             logger.write('\nEND OF TURN {} MOVEMENT PHASE\n'.format(turn))
-            logger.write('\nBEGINNING OF TURN {} COMBAT PHASE\n'.format(turn))
+            logger.write('\nBEGINNING OF TURN {} COMBAT PHASE'.format(turn))
             # print("\n\nself.complete_combat_phase() starting\n")
             self.complete_combat_phase()
-            logger.write('\nEND OF TURN {} COMBAT PHASE\n'.format(turn))
+            logger.write('\n\nEND OF TURN {} COMBAT PHASE\n'.format(turn))
 
             player_1_scout_coords = self.state['players'][1]['scout_coords']
             player_1_home_colony_coords = self.state['players'][1]['home_colony_coords']
@@ -232,4 +296,4 @@ class Game():
 
             turn += 1
 
-# python tests/test_game_level_0_2.py
+    # python tests/test_game_level_0_3_random_seeds.py
